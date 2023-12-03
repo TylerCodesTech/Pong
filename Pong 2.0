@@ -1,0 +1,238 @@
+import pygame
+import random
+import sys
+
+# Set the desired frames per second
+FPS = 60
+
+# Initialize Pygame
+pygame.init()
+
+# Window dimensions
+WIDTH = 800
+HEIGHT = 600
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GRAY = (128, 128, 128)
+
+# Constants
+BALL_RADIUS = 10
+DEFAULT_PADDLE_WIDTH = 10
+DEFAULT_PADDLE_HEIGHT = 100
+DEFAULT_BALL_SPEED_X = 9
+DEFAULT_BALL_SPEED_Y = 9
+DEFAULT_GAME_COLORS = {
+    'background': BLACK,
+    'paddles': WHITE,
+    'ball': WHITE,
+}
+
+# Create the game window
+window = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Pong")
+
+clock = pygame.time.Clock()
+
+def reset_ball():
+    return WIDTH // 2, HEIGHT // 2, random.choice([-1, 1]), random.choice([-1, 1])
+
+def draw_text(text, font, color, x, y):
+    text_surface = font.render(text, True, color)
+    text_rect = text_surface.get_rect()
+    text_rect.center = (x, y)
+    window.blit(text_surface, text_rect)
+
+def draw_buttons(buttons):
+    for button in buttons:
+        pygame.draw.rect(window, GRAY, button['rect'])
+        draw_text(button['text'], pygame.font.Font(None, 36), BLACK, button['rect'].centerx, button['rect'].centery)
+
+def handle_button_click(click_pos, buttons):
+    for button in buttons:
+        if button['rect'].collidepoint(click_pos):
+            return button['text']
+    return None
+
+def settings_menu():
+    # Initialize settings with default values
+    paddle_width = DEFAULT_PADDLE_WIDTH
+    paddle_height = DEFAULT_PADDLE_HEIGHT
+    ball_speed_x = DEFAULT_BALL_SPEED_X
+    ball_speed_y = DEFAULT_BALL_SPEED_Y
+    game_colors = DEFAULT_GAME_COLORS.copy()
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+        # Clear the screen
+        window.fill(BLACK)
+
+        # Display and handle UI elements for settings (input fields, sliders, etc.)
+        font = pygame.font.Font(None, 36)
+        draw_text("Settings", font, WHITE, WIDTH // 2, 50)
+        draw_text("Paddle Width:", font, WHITE, 100, 150)
+        draw_text(str(paddle_width), font, WHITE, 300, 150)
+        draw_text("Paddle Height:", font, WHITE, 100, 200)
+        draw_text(str(paddle_height), font, WHITE, 300, 200)
+        draw_text("Ball Speed X:", font, WHITE, 100, 250)
+        draw_text(str(ball_speed_x), font, WHITE, 300, 250)
+        draw_text("Ball Speed Y:", font, WHITE, 100, 300)
+        draw_text(str(ball_speed_y), font, WHITE, 300, 300)
+
+        # Add more UI elements for customizing game colors if needed
+
+        pygame.display.flip()
+
+        # Handle user input to update settings
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_ESCAPE]:
+            running = False
+        if keys[pygame.K_RETURN]:
+            # Apply settings and return to the game
+            return paddle_width, paddle_height, ball_speed_x, ball_speed_y, game_colors
+
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.unicode.isdigit():
+                    if event.key == pygame.K_1:
+                        paddle_width = int(str(paddle_width) + event.unicode)
+                    elif event.key == pygame.K_2:
+                        paddle_height = int(str(paddle_height) + event.unicode)
+                    elif event.key == pygame.K_3:
+                        ball_speed_x = int(str(ball_speed_x) + event.unicode)
+                    elif event.key == pygame.K_4:
+                        ball_speed_y = int(str(ball_speed_y) + event.unicode)
+                elif event.key == pygame.K_BACKSPACE:
+                    if event.key == pygame.K_1:
+                        paddle_width = int(str(paddle_width)[:-1])
+                    elif event.key == pygame.K_2:
+                        paddle_height = int(str(paddle_height)[:-1])
+                    elif event.key == pygame.K_3:
+                        ball_speed_x = int(str(ball_speed_x)[:-1])
+                    elif event.key == pygame.K_4:
+                        ball_speed_y = int(str(ball_speed_y)[:-1])
+
+    return DEFAULT_PADDLE_WIDTH, DEFAULT_PADDLE_HEIGHT, DEFAULT_BALL_SPEED_X, DEFAULT_BALL_SPEED_Y, DEFAULT_GAME_COLORS
+
+def main():
+    global FPS
+    global DEFAULT_GAME_COLORS
+    global DEFAULT_PADDLE_HEIGHT
+    global DEFAULT_PADDLE_WIDTH
+    global DEFAULT_BALL_SPEED_X
+    global DEFAULT_BALL_SPEED_Y
+
+    # Paddle positions
+    player_paddle_y = HEIGHT // 2 - DEFAULT_PADDLE_HEIGHT // 2
+    opponent_paddle_y = HEIGHT // 2 - DEFAULT_PADDLE_HEIGHT // 2
+
+    # Ball position and direction
+    ball_x, ball_y, ball_dx, ball_dy = reset_ball()
+
+    # Player and opponent scores
+    player_score = 0
+    opponent_score = 0
+
+    keys = pygame.key.get_pressed()
+    # Load fonts
+    font_name = pygame.font.match_font('arial')
+
+    # Define PADDLE_SPEED here as a local variable
+    PADDLE_SPEED = 5  # You can adjust this value as needed
+
+    # Splash screen buttons
+    buttons = [
+        {'text': 'Start', 'rect': pygame.Rect(WIDTH // 2 - 100, 300, 200, 50)},
+        {'text': 'Settings', 'rect': pygame.Rect(WIDTH // 2 - 100, 400, 200, 50)},
+        {'text': 'Exit Game', 'rect': pygame.Rect(WIDTH // 2 - 100, 500, 200, 50)}
+    ]
+
+    show_splash_screen = True
+    game_started = False
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN and show_splash_screen:
+                click_pos = pygame.mouse.get_pos()
+                button_clicked = handle_button_click(click_pos, buttons)
+                if button_clicked:
+                    if button_clicked == 'Start':
+                        show_splash_screen = False
+                        game_started = True
+                    elif button_clicked == 'Settings':
+                        DEFAULT_PADDLE_WIDTH, DEFAULT_PADDLE_HEIGHT, DEFAULT_BALL_SPEED_X, DEFAULT_BALL_SPEED_Y, DEFAULT_GAME_COLORS = settings_menu()
+                    elif button_clicked == 'Exit Game':
+                        pygame.quit()
+                        sys.exit()
+
+        if game_started:
+            if keys[pygame.K_UP] and player_paddle_y > 0:
+                player_paddle_y -= PADDLE_SPEED
+            if keys[pygame.K_DOWN] and player_paddle_y < HEIGHT - DEFAULT_PADDLE_HEIGHT:
+                player_paddle_y += PADDLE_SPEED
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_UP] and player_paddle_y > 0:
+                player_paddle_y -= PADDLE_SPEED
+            if keys[pygame.K_DOWN] and player_paddle_y < HEIGHT - DEFAULT_PADDLE_HEIGHT:
+                player_paddle_y += PADDLE_SPEED
+
+            if ball_x <= DEFAULT_PADDLE_WIDTH and player_paddle_y <= ball_y <= player_paddle_y + DEFAULT_PADDLE_HEIGHT:
+                ball_dx *= -1
+            if ball_x >= WIDTH - DEFAULT_PADDLE_WIDTH - BALL_RADIUS and opponent_paddle_y <= ball_y <= opponent_paddle_y + DEFAULT_PADDLE_HEIGHT:
+                ball_dx *= -1
+
+            ball_x += ball_dx * DEFAULT_BALL_SPEED_X
+            ball_y += ball_dy * DEFAULT_BALL_SPEED_Y
+
+            if ball_y <= 0 or ball_y >= HEIGHT - BALL_RADIUS:
+                ball_dy *= -1
+
+            if ball_x < 0:
+                opponent_score += 1
+                ball_x, ball_y, ball_dx, ball_dy = reset_ball()
+            if ball_x > WIDTH - BALL_RADIUS:
+                player_score += 1
+                ball_x, ball_y, ball_dx, ball_dy = reset_ball()
+
+            # AI opponent movement
+            if opponent_paddle_y + DEFAULT_PADDLE_HEIGHT // 2 < ball_y:
+                opponent_paddle_y += PADDLE_SPEED
+            if opponent_paddle_y + DEFAULT_PADDLE_HEIGHT // 2 > ball_y:
+                opponent_paddle_y -= PADDLE_SPEED
+
+        # Clear the screen
+        window.fill(DEFAULT_GAME_COLORS['background'])
+
+        if show_splash_screen:
+            # Draw buttons on the splash screen
+            draw_buttons(buttons)
+        else:
+            # Draw paddles
+            pygame.draw.rect(window, DEFAULT_GAME_COLORS['paddles'], pygame.Rect(0, player_paddle_y, DEFAULT_PADDLE_WIDTH, DEFAULT_PADDLE_HEIGHT))
+            pygame.draw.rect(window, DEFAULT_GAME_COLORS['paddles'], pygame.Rect(WIDTH - DEFAULT_PADDLE_WIDTH, opponent_paddle_y, DEFAULT_PADDLE_WIDTH, DEFAULT_PADDLE_HEIGHT))
+
+            # Draw the ball
+            pygame.draw.circle(window, DEFAULT_GAME_COLORS['ball'], (ball_x, ball_y), BALL_RADIUS)
+
+            # Draw scores
+            font = pygame.font.Font(font_name, 36)
+            draw_text(str(player_score), font, DEFAULT_GAME_COLORS['paddles'], WIDTH // 4, 50)
+            draw_text(str(opponent_score), font, DEFAULT_GAME_COLORS['paddles'], WIDTH - WIDTH // 4, 50)
+
+        pygame.display.flip()
+
+        clock.tick(FPS)
+
+    pygame.quit()
+
+# Start the game
+if __name__ == '__main__':
+    main()
