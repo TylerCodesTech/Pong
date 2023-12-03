@@ -84,7 +84,7 @@ def settings_menu():
         draw_text("Ball Speed Y:", font, WHITE, 100, 300)
         draw_text(str(ball_speed_y), font, WHITE, 300, 300)
 
-        # Add more UI elements for customizing game colors if needed
+        # Add more UI elements for customizing game colors, V3 idea
 
         pygame.display.flip()
 
